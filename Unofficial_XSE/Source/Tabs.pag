@@ -1,0 +1,235 @@
+VERSION 5.00
+Begin VB.PropertyPage Tabs 
+   Caption         =   "PropertyPage1"
+   ClientHeight    =   3600
+   ClientLeft      =   0
+   ClientTop       =   0
+   ClientWidth     =   4800
+   PaletteMode     =   0  'Halftone
+   ScaleHeight     =   3600
+   ScaleWidth      =   4800
+   Begin VB.CommandButton cmdAddTab 
+      Caption         =   "Add Tab"
+      Height          =   285
+      Left            =   2700
+      TabIndex        =   9
+      Top             =   240
+      Width           =   1035
+   End
+   Begin VB.TextBox txt 
+      Height          =   285
+      Index           =   0
+      Left            =   1470
+      TabIndex        =   8
+      Top             =   600
+      Width           =   3255
+   End
+   Begin VB.TextBox txt 
+      Height          =   285
+      Index           =   1
+      Left            =   1470
+      TabIndex        =   7
+      Top             =   960
+      Width           =   1095
+   End
+   Begin VB.HScrollBar hsb 
+      Height          =   285
+      Left            =   2220
+      Max             =   1
+      Min             =   1
+      TabIndex        =   6
+      Top             =   240
+      Value           =   1
+      Width           =   435
+   End
+   Begin VB.TextBox txtIndex 
+      BackColor       =   &H80000000&
+      Height          =   285
+      Left            =   1470
+      Locked          =   -1  'True
+      TabIndex        =   5
+      Top             =   240
+      Width           =   735
+   End
+   Begin VB.Frame Frame1 
+      Caption         =   "Tab Picture"
+      Height          =   1335
+      Left            =   120
+      TabIndex        =   1
+      Top             =   1440
+      Width           =   2820
+      Begin VB.CommandButton cmdOpenDlg 
+         Caption         =   "..."
+         Height          =   315
+         Left            =   1320
+         TabIndex        =   4
+         Top             =   285
+         Width           =   435
+      End
+      Begin VB.PictureBox picTab 
+         AutoRedraw      =   -1  'True
+         AutoSize        =   -1  'True
+         Height          =   870
+         Left            =   135
+         ScaleHeight     =   810
+         ScaleWidth      =   870
+         TabIndex        =   3
+         Top             =   270
+         Width           =   930
+      End
+      Begin VB.CommandButton cmdDel 
+         Caption         =   "Ð"
+         BeginProperty Font 
+            Name            =   "Wingdings 2"
+            Size            =   8.25
+            Charset         =   2
+            Weight          =   400
+            Underline       =   0   'False
+            Italic          =   0   'False
+            Strikethrough   =   0   'False
+         EndProperty
+         Height          =   315
+         Left            =   1800
+         TabIndex        =   2
+         Top             =   285
+         Width           =   435
+      End
+   End
+   Begin VB.CommandButton cmdDelete 
+      Caption         =   "Delete"
+      Height          =   285
+      Left            =   3780
+      TabIndex        =   0
+      Top             =   240
+      Width           =   945
+   End
+   Begin VB.Label lbl 
+      BackStyle       =   0  'Transparent
+      Caption         =   "Tab Text :"
+      Height          =   255
+      Index           =   0
+      Left            =   270
+      TabIndex        =   12
+      Top             =   600
+      Width           =   975
+   End
+   Begin VB.Label lbl 
+      BackStyle       =   0  'Transparent
+      Caption         =   "Tab Width :"
+      Height          =   255
+      Index           =   1
+      Left            =   270
+      TabIndex        =   11
+      Top             =   960
+      Width           =   975
+   End
+   Begin VB.Label lbl 
+      BackStyle       =   0  'Transparent
+      Caption         =   "Index :"
+      Height          =   255
+      Index           =   3
+      Left            =   255
+      TabIndex        =   10
+      Top             =   270
+      Width           =   975
+   End
+End
+Attribute VB_Name = "Tabs"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+Option Explicit
+
+Dim TB              As xpWellsTab
+Dim iLastTab        As Long
+Const sFilter As String = "All Picture Files|*.bmp;*.ico;*.gif"
+
+Private Sub cmdAddTab_Click()
+Dim i As Long
+    If Changed = True Then
+        PropertyPage_ApplyChanges
+    End If
+    With TB
+        i = .AddTab
+        hsb.Max = i
+    End With
+    Changed = True
+    iLastTab = i
+    picTab.Picture = Nothing
+End Sub
+
+Private Sub cmdDel_Click()
+    picTab.Picture = Nothing
+    Changed = True
+End Sub
+
+Private Sub cmdDelete_Click()
+    bEditing = True
+    TB.RemoveTab
+    hsb.Max = TB.TabCount
+    Changed = True
+    bEditing = False
+End Sub
+
+Private Sub cmdOpenDlg_Click()
+Dim sFile As String
+    sFile = vbNullString
+    sFile = OpenCommonDialog("Load Picture", sFilter)
+    If LenB(sFile) > 0 Then
+        Set picTab.Picture = LoadPicture(sFile)
+        Changed = True
+    End If
+
+End Sub
+
+Private Sub hsb_Change()
+Dim i As Long
+    txtIndex.text = hsb.Value
+    i = hsb.Value
+    If i <> iLastTab And Changed = True Then
+        PropertyPage_ApplyChanges
+    End If
+    iLastTab = i
+    txt(0).text = TB.TabCaption(i)
+    txt(1).text = TB.TabWidth(i)
+    'Set picTab.Picture = TB.TabPicture(i)
+    If i = 0 Then
+        cmdDelete.Enabled = False
+    Else
+        cmdDelete.Enabled = True
+    End If
+End Sub
+
+Private Sub picTab_Change()
+    Changed = True
+End Sub
+
+Private Sub PropertyPage_ApplyChanges()
+Dim i As Long
+    With TB
+        i = iLastTab
+        If txt(1).text = vbNullString Then
+            txt(1).text = "50"
+        End If
+        .TabCaption(i) = txt(0).text
+        .TabWidth(i) = txt(1).text
+        Set .TabPicture(i) = picTab.Picture
+    End With
+End Sub
+
+Private Sub PropertyPage_SelectionChanged()
+    Set TB = SelectedControls(0)
+    If TB.TabCount <> 0 Then
+        hsb.Max = TB.TabCount
+        txtIndex.text = 1
+        iLastTab = 1
+        hsb_Change
+    End If
+End Sub
+
+Private Sub txt_Change(Index As Integer)
+    Changed = True
+End Sub
+
+
